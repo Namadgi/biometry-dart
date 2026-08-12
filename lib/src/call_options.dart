@@ -1,4 +1,11 @@
-/// Builds optional per-request headers from named parameters.
+/// Builds optional per-request metadata headers from named parameters.
+///
+/// For API v2 gateway operations, identity/session/trigger/document-provider/
+/// prefilled-video selection are NOT headers — they are fields of the per-call
+/// input objects (carried in the JSON `request` part), and the gateway strips
+/// the corresponding headers. The `fullname` / `sessionId` / `actionTrigger`
+/// options remain here only for the non-gateway services (transactions, API
+/// keys), which are unaffected by the v2 migration.
 Map<String, String> buildCallHeaders({
   String? fullname,
   String? sessionId,
@@ -8,8 +15,6 @@ Map<String, String> buildCallHeaders({
   String? requestTags,
   String? clientApp,
   String? clientVersion,
-  bool? inhouseDocAuth,
-  bool? mrzValidation,
 }) {
   final headers = <String, String>{};
   if (fullname != null) headers['X-User-Fullname'] = fullname;
@@ -20,9 +25,5 @@ Map<String, String> buildCallHeaders({
   if (requestTags != null) headers['X-Request-Tags'] = requestTags;
   if (clientApp != null) headers['X-Client-App'] = clientApp;
   if (clientVersion != null) headers['X-Client-Version'] = clientVersion;
-  if (inhouseDocAuth != null) {
-    headers['X-Inhouse-Docauth'] = inhouseDocAuth.toString();
-  }
-  if (mrzValidation == true) headers['X-Inhouse-MRZ'] = 'true';
   return headers;
 }

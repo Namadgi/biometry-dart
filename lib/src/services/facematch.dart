@@ -2,92 +2,54 @@ import '../call_options.dart';
 import '../client.dart';
 import '../response.dart';
 import '../transport.dart';
+import '../types.dart';
+import '../v2.dart';
 
-/// Handles face matching between images and videos.
+/// Matches a live capture against a client-provided reference image.
 class FaceMatchService {
   final BiometryTransport _transport;
 
   FaceMatchService(this._transport);
 
-  /// Compares faces from an uploaded image and video.
-  Future<BiometryResponse> match({
-    required List<int> image,
-    required String imageName,
-    required List<int> video,
-    required String videoName,
-    String? fullname,
-    String? sessionId,
-    String? actionTrigger,
+  /// Compares the live capture against the reference image.
+  Future<BiometryResponse> match(
+    FaceMatchInput input, {
     String? deviceInfo,
     String? geoLocation,
     String? requestTags,
     String? clientApp,
     String? clientVersion,
   }) {
+    final files = <FileUpload>[
+      FileUpload(
+        fieldName: 'reference_image',
+        fileName: input.referenceName,
+        content: input.referenceImage,
+      ),
+    ];
+    if (input.video != null) {
+      files.add(FileUpload(
+        fieldName: 'video',
+        fileName: input.videoName ?? 'capture',
+        content: input.video!,
+      ));
+    }
+
     return _transport.doMultipartRaw(
-      '$pathGateway/match-faces',
-      files: [
-        FileUpload(
-          fieldName: 'image',
-          fileName: imageName,
-          content: image,
-        ),
-        FileUpload(
-          fieldName: 'video',
-          fileName: videoName,
-          content: video,
-        ),
-      ],
+      '$pathGatewayV2/face-match',
+      fields: requestField(
+        userId: input.userId,
+        sessionId: input.sessionId,
+        useSessionVideo: input.useSessionVideo,
+      ),
+      files: files,
       extraHeaders: buildCallHeaders(
-        fullname: fullname,
-        sessionId: sessionId,
-        actionTrigger: actionTrigger,
         deviceInfo: deviceInfo,
         geoLocation: geoLocation,
         requestTags: requestTags,
         clientApp: clientApp,
         clientVersion: clientVersion,
       ),
-    );
-  }
-
-  /// Compares a face image against the video from a previous process-video
-  /// call in the given session, avoiding re-upload.
-  Future<BiometryResponse> matchWithSessionVideo({
-    required List<int> image,
-    required String imageName,
-    required String sessionId,
-    String? fullname,
-    String? actionTrigger,
-    String? deviceInfo,
-    String? geoLocation,
-    String? requestTags,
-    String? clientApp,
-    String? clientVersion,
-  }) {
-    final headers = buildCallHeaders(
-      fullname: fullname,
-      sessionId: sessionId,
-      actionTrigger: actionTrigger,
-      deviceInfo: deviceInfo,
-      geoLocation: geoLocation,
-      requestTags: requestTags,
-      clientApp: clientApp,
-      clientVersion: clientVersion,
-    );
-    headers['X-Use-Prefilled-Video'] = 'true';
-    headers['X-Session-ID'] = sessionId;
-
-    return _transport.doMultipartRaw(
-      '$pathGateway/match-faces',
-      files: [
-        FileUpload(
-          fieldName: 'image',
-          fileName: imageName,
-          content: image,
-        ),
-      ],
-      extraHeaders: headers,
     );
   }
 }

@@ -26,27 +26,21 @@ class BiometryTransport {
   final http.Client httpClient;
   final String baseUrl;
   final String apiKey;
-  final String userFullname;
   final String userAgent;
 
   BiometryTransport({
     required this.httpClient,
     required this.baseUrl,
     required this.apiKey,
-    this.userFullname = '',
-    this.userAgent = 'biometry-dart/0.1.0',
+    this.userAgent = 'biometry-dart/0.2.0',
   });
 
   /// Builds standard headers for every request.
   Map<String, String> _baseHeaders() {
-    final headers = <String, String>{
+    return <String, String>{
       'Authorization': 'Bearer $apiKey',
       'User-Agent': userAgent,
     };
-    if (userFullname.isNotEmpty) {
-      headers['X-User-Fullname'] = userFullname;
-    }
-    return headers;
   }
 
   /// Sends a JSON request and decodes the "data" field from the response
@@ -93,13 +87,14 @@ class BiometryTransport {
   /// into [T] using [fromJson].
   Future<T> doMultipart<T>(
     String path, {
+    String method = 'POST',
     Map<String, String> fields = const {},
     List<FileUpload> files = const [],
     T Function(dynamic json)? fromJson,
     Map<String, String> extraHeaders = const {},
   }) async {
     final uri = Uri.parse('$baseUrl$path');
-    final request = http.MultipartRequest('POST', uri)
+    final request = http.MultipartRequest(method, uri)
       ..headers.addAll(_baseHeaders())
       ..headers.addAll(extraHeaders)
       ..fields.addAll(fields);
@@ -193,5 +188,25 @@ class BiometryTransport {
     final json =
         jsonDecode(utf8.decode(responseBody)) as Map<String, dynamic>;
     return BiometryResponse.fromJson(json, streamed.headers);
+  }
+
+  /// Sends a request and returns the raw response body bytes (for endpoints
+  /// that return a non-JSON payload such as an image's octet-stream).
+  Future<List<int>> doBytes(
+    String method,
+    String path, {
+    Map<String, String> extraHeaders = const {},
+  }) async {
+    final headers = _baseHeaders()..addAll(extraHeaders);
+    final uri = Uri.parse('$baseUrl$path');
+    final request = http.Request(method, uri)..headers.addAll(headers);
+
+    final streamed = await httpClient.send(request);
+    final responseBody = await streamed.stream.toBytes();
+
+    if (streamed.statusCode >= 400) {
+      throw parseAPIError(streamed.statusCode, responseBody);
+    }
+    return responseBody;
   }
 }

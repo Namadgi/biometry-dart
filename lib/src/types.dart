@@ -11,13 +11,17 @@ class EndSessionRequest {
   }
 }
 
-/// Input for processing a biometric video.
-class ProcessVideoInput {
+/// Input for a liveness check (face liveness, active speaker detection, visual
+/// speech recognition).
+class LivenessInput {
+  /// Opaque, customer-provided identity key.
+  final String userId;
+
   /// Video file bytes.
   final List<int> video;
 
   /// Name of the video file.
-  final String videoName;
+  final String fileName;
 
   /// Phrase spoken in the video.
   final String phrase;
@@ -25,20 +29,126 @@ class ProcessVideoInput {
   /// Optional vocabulary identifier.
   final String? vocabulary;
 
-  /// Optional trigger label.
+  /// Optional contextual trigger event name.
   final String? trigger;
 
-  ProcessVideoInput({
+  /// Optional session ID for combined scoring.
+  final String? sessionId;
+
+  /// Services to skip from the pipeline (see [VerificationServices]).
+  final List<String>? excludeServices;
+
+  LivenessInput({
+    required this.userId,
     required this.video,
-    required this.videoName,
+    required this.fileName,
     required this.phrase,
     this.vocabulary,
     this.trigger,
+    this.sessionId,
+    this.excludeServices,
+  });
+}
+
+/// Input for face or voice verification against the user's enrolled template.
+class VerifyInput {
+  /// Opaque, customer-provided identity key.
+  final String userId;
+
+  /// Video (face) or audio/video (voice) bytes. Omit when [useSessionVideo] is true.
+  final List<int>? media;
+
+  /// Name of the media file.
+  final String? fileName;
+
+  /// Phrase spoken in the media.
+  final String phrase;
+
+  /// Optional vocabulary identifier.
+  final String? vocabulary;
+
+  /// Optional session ID for combined scoring / session-video reuse.
+  final String? sessionId;
+
+  /// Reuse the video captured earlier in the session. Requires [sessionId].
+  final bool useSessionVideo;
+
+  VerifyInput({
+    required this.userId,
+    this.media,
+    this.fileName,
+    required this.phrase,
+    this.vocabulary,
+    this.sessionId,
+    this.useSessionVideo = false,
+  });
+}
+
+/// Input for a face-match request.
+class FaceMatchInput {
+  /// Opaque, customer-provided identity key.
+  final String userId;
+
+  /// Reference portrait image bytes.
+  final List<int> referenceImage;
+
+  /// Name of the reference image file.
+  final String referenceName;
+
+  /// Live capture bytes. Omit when [useSessionVideo] is true.
+  final List<int>? video;
+
+  /// Name of the video file.
+  final String? videoName;
+
+  /// Optional session ID; required when [useSessionVideo] is true.
+  final String? sessionId;
+
+  /// Reuse the video captured earlier in the session. Requires [sessionId].
+  final bool useSessionVideo;
+
+  FaceMatchInput({
+    required this.userId,
+    required this.referenceImage,
+    required this.referenceName,
+    this.video,
+    this.videoName,
+    this.sessionId,
+    this.useSessionVideo = false,
+  });
+}
+
+/// Input for a document authenticity check.
+class DocAuthInput {
+  /// Document image bytes.
+  final List<int> document;
+
+  /// Name of the document file.
+  final String fileName;
+
+  /// Optional session ID.
+  final String? sessionId;
+
+  /// Document authenticity provider: "inhouse" or "idscan".
+  final String? provider;
+
+  /// MRZ extraction provider: "inhouse" or "idscan".
+  final String? mrzProvider;
+
+  DocAuthInput({
+    required this.document,
+    required this.fileName,
+    this.sessionId,
+    this.provider,
+    this.mrzProvider,
   });
 }
 
 /// Input for face enrollment.
 class EnrollFaceInput {
+  /// Opaque, customer-provided identity key.
+  final String userId;
+
   /// Face image bytes.
   final List<int> face;
 
@@ -49,35 +159,58 @@ class EnrollFaceInput {
   final bool isDocument;
 
   EnrollFaceInput({
+    required this.userId,
     required this.face,
     required this.fileName,
     this.isDocument = false,
   });
 }
 
-/// A single voice recording for enrollment.
-class VoiceFile {
-  final String fileName;
-  final List<int> content;
-
-  VoiceFile({required this.fileName, required this.content});
-}
-
 /// Input for voice enrollment.
 class EnrollVoiceInput {
-  /// Voice recording files.
-  final List<VoiceFile> files;
+  /// Opaque, customer-provided identity key.
+  final String userId;
 
-  /// One phrase per voice file.
-  final List<String> phrases;
+  /// Voice recording bytes.
+  final List<int> voice;
+
+  /// File name of the voice recording.
+  final String fileName;
+
+  /// The phrase spoken in the recording.
+  final String phrase;
 
   /// Optional vocabulary identifier.
   final String? vocabulary;
 
   EnrollVoiceInput({
-    required this.files,
-    required this.phrases,
+    required this.userId,
+    required this.voice,
+    required this.fileName,
+    required this.phrase,
     this.vocabulary,
+  });
+}
+
+/// Input for submitting a deepfake check.
+class DeepfakeInput {
+  /// Opaque, customer-provided identity key.
+  final String userId;
+
+  /// Video file bytes.
+  final List<int> video;
+
+  /// Name of the video file.
+  final String fileName;
+
+  /// Optional session ID.
+  final String? sessionId;
+
+  DeepfakeInput({
+    required this.userId,
+    required this.video,
+    required this.fileName,
+    this.sessionId,
   });
 }
 
@@ -268,79 +401,44 @@ class ConsentApproval {
       };
 }
 
-/// Image upload response.
-class ImageUploadResponse {
-  final String url;
+/// State of an asynchronous deepfake check.
+class DeepfakeCheck {
+  final String id;
 
-  ImageUploadResponse({required this.url});
-
-  factory ImageUploadResponse.fromJson(Map<String, dynamic> json) {
-    return ImageUploadResponse(url: (json['url'] as String?) ?? '');
-  }
-
-  Map<String, dynamic> toJson() => {'url': url};
-}
-
-/// Image retrieval response.
-class ImageGetResponse {
-  final String url;
-
-  ImageGetResponse({required this.url});
-
-  factory ImageGetResponse.fromJson(Map<String, dynamic> json) {
-    return ImageGetResponse(url: (json['url'] as String?) ?? '');
-  }
-
-  Map<String, dynamic> toJson() => {'url': url};
-}
-
-/// AVF inference submission response.
-class AVFInferenceResponse {
-  final String requestId;
+  /// pending | processing | completed | failed
   final String status;
 
-  AVFInferenceResponse({required this.requestId, required this.status});
+  /// Deepfake probability (0.0–1.0), null until completed.
+  final double? score;
+  final String? prediction;
+  final String? message;
 
-  factory AVFInferenceResponse.fromJson(Map<String, dynamic> json) {
-    return AVFInferenceResponse(
-      requestId: (json['request_id'] as String?) ?? '',
-      status: (json['status'] as String?) ?? '',
-    );
-  }
+  /// Unix timestamp (seconds).
+  final int? createdAt;
 
-  Map<String, dynamic> toJson() => {
-        'request_id': requestId,
-        'status': status,
-      };
-}
+  /// Unix timestamp (seconds).
+  final int? completedAt;
 
-/// AVF inference status response.
-class AVFStatusResponse {
-  final String requestId;
-  final String status;
-  final dynamic result;
-
-  AVFStatusResponse({
-    required this.requestId,
+  DeepfakeCheck({
+    required this.id,
     required this.status,
-    this.result,
+    this.score,
+    this.prediction,
+    this.message,
+    this.createdAt,
+    this.completedAt,
   });
 
-  factory AVFStatusResponse.fromJson(Map<String, dynamic> json) {
-    return AVFStatusResponse(
-      requestId: (json['request_id'] as String?) ?? '',
+  factory DeepfakeCheck.fromJson(Map<String, dynamic> json) {
+    return DeepfakeCheck(
+      id: (json['id'] as String?) ?? '',
       status: (json['status'] as String?) ?? '',
-      result: json['result'],
+      score: (json['score'] as num?)?.toDouble(),
+      prediction: json['prediction'] as String?,
+      message: json['message'] as String?,
+      createdAt: (json['created_at'] as num?)?.toInt(),
+      completedAt: (json['completed_at'] as num?)?.toInt(),
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    final map = <String, dynamic>{
-      'request_id': requestId,
-      'status': status,
-    };
-    if (result != null) map['result'] = result;
-    return map;
   }
 }
 

@@ -11,9 +11,6 @@ class SessionService {
 
   /// Begins a new biometric session and returns the session ID.
   Future<String> start({
-    String? fullname,
-    String? sessionId,
-    String? actionTrigger,
     String? deviceInfo,
     String? geoLocation,
     String? requestTags,
@@ -22,12 +19,10 @@ class SessionService {
   }) {
     return _transport.doJson<String>(
       'POST',
-      '$pathGateway/sessions/start',
-      fromJson: (data) => data as String,
+      '$pathGatewayV2/sessions',
+      fromJson: (data) =>
+          (data as Map<String, dynamic>)['session_id'] as String,
       extraHeaders: buildCallHeaders(
-        fullname: fullname,
-        sessionId: sessionId,
-        actionTrigger: actionTrigger,
         deviceInfo: deviceInfo,
         geoLocation: geoLocation,
         requestTags: requestTags,
@@ -37,13 +32,10 @@ class SessionService {
     );
   }
 
-  /// Terminates a session by ID.
+  /// Terminates a session by ID. Pass [request] to run a SIM-swap check.
   Future<void> end(
     String id, {
     EndSessionRequest? request,
-    String? fullname,
-    String? sessionId,
-    String? actionTrigger,
     String? deviceInfo,
     String? geoLocation,
     String? requestTags,
@@ -52,12 +44,9 @@ class SessionService {
   }) {
     return _transport.doJson<void>(
       'POST',
-      '$pathGateway/sessions/end/$id',
+      '$pathGatewayV2/sessions/$id/end',
       payload: request?.toJson(),
       extraHeaders: buildCallHeaders(
-        fullname: fullname,
-        sessionId: sessionId,
-        actionTrigger: actionTrigger,
         deviceInfo: deviceInfo,
         geoLocation: geoLocation,
         requestTags: requestTags,

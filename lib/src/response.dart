@@ -1,55 +1,82 @@
 import 'dart:convert';
 
-/// Full API response envelope. Used for endpoints like process-video and
-/// match-faces that return scoring data alongside the result.
+/// Scoring decision computed for a request when a scoring system applies.
+class Decision {
+  final String? status;
+  final double? score;
+  final List<String> reasons;
+
+  Decision({this.status, this.score, this.reasons = const []});
+
+  factory Decision.fromJson(Map<String, dynamic> json) {
+    final reasons = json['reasons'];
+    return Decision(
+      status: json['status'] as String?,
+      score: (json['score'] as num?)?.toDouble(),
+      reasons:
+          reasons is List ? reasons.map((e) => e.toString()).toList() : const [],
+    );
+  }
+}
+
+/// Response metadata attached to every API v2 response.
+class ResponseMeta {
+  final String? requestId;
+  final String? message;
+
+  ResponseMeta({this.requestId, this.message});
+
+  factory ResponseMeta.fromJson(Map<String, dynamic> json) {
+    return ResponseMeta(
+      requestId: json['request_id'] as String?,
+      message: json['message'] as String?,
+    );
+  }
+}
+
+/// Full API v2 success envelope. Used for verification endpoints (liveness,
+/// face-verify, voice-verify, face-match, documents/check) that may carry a
+/// scoring decision alongside the raw service data.
 class BiometryResponse {
-  /// Raw JSON data from the "data" field.
+  /// Raw JSON from the "data" field.
   final dynamic data;
 
-  /// Raw scoring result object.
-  final dynamic scoringResult;
+  /// Scoring decision, present only when a scoring system applies to the API key.
+  final Decision? decision;
 
-  /// Numeric score (e.g. face match confidence).
-  final double score;
-
-  /// Reasons that led to the scoring decision.
-  final List<String> decisionReasons;
-
-  /// Server message.
-  final String message;
+  /// Response metadata (request ID, message).
+  final ResponseMeta meta;
 
   /// Raw HTTP response headers.
   final Map<String, String> headers;
 
   BiometryResponse({
     this.data,
-    this.scoringResult,
-    this.score = 0,
-    this.decisionReasons = const [],
-    this.message = '',
+    this.decision,
+    ResponseMeta? meta,
     this.headers = const {},
-  });
+  }) : meta = meta ?? ResponseMeta();
 
   /// Creates a [BiometryResponse] from a JSON map and response headers.
   factory BiometryResponse.fromJson(
     Map<String, dynamic> json,
     Map<String, String> headers,
   ) {
-    final reasons = json['decision_reasons'];
+    final decision = json['decision'];
+    final meta = json['meta'];
     return BiometryResponse(
       data: json['data'],
-      scoringResult: json['scoring_result'],
-      score: (json['score'] as num?)?.toDouble() ?? 0,
-      decisionReasons: reasons is List
-          ? reasons.map((e) => e.toString()).toList()
-          : const [],
-      message: (json['message'] as String?) ?? '',
+      decision: decision is Map<String, dynamic>
+          ? Decision.fromJson(decision)
+          : null,
+      meta: meta is Map<String, dynamic>
+          ? ResponseMeta.fromJson(meta)
+          : ResponseMeta(),
       headers: headers,
     );
   }
 
-  /// Decodes the [data] field into a typed object using the provided
-  /// [fromJson] factory.
+  /// Decodes the [data] field into a typed object using [fromJson].
   T decode<T>(T Function(Map<String, dynamic>) fromJson) {
     if (data is Map<String, dynamic>) {
       return fromJson(data as Map<String, dynamic>);
@@ -62,12 +89,8 @@ class BiometryResponse {
   /// Returns the raw data field as a JSON string.
   String get dataJson => jsonEncode(data);
 
-  /// Returns the X-Request-Id response header value.
-  String get requestId => headers['x-request-id'] ?? '';
-
-  /// Returns true if X-Auto-Enroll response header is "true".
-  bool get autoEnrolled => headers['x-auto-enroll'] == 'true';
-
-  /// Returns true if X-Removed-Services response header is "true".
-  bool get removedServices => headers['x-removed-services'] == 'true';
+  /// The request identifier, preferring the envelope meta and falling back to
+  /// the X-Request-Id response header.
+  String get requestId =>
+      meta.requestId ?? headers['x-request-id'] ?? '';
 }

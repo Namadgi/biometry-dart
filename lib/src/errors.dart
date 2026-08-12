@@ -5,6 +5,10 @@ class BiometryAPIError implements Exception {
   /// The HTTP status code.
   final int statusCode;
 
+  /// Machine-readable error code from the API v2 error envelope
+  /// (e.g. "invalid_request", "face_not_detected"). Empty for legacy responses.
+  final String code;
+
   /// Human-readable error message extracted from the response body.
   final String message;
 
@@ -13,23 +17,38 @@ class BiometryAPIError implements Exception {
 
   BiometryAPIError({
     required this.statusCode,
+    this.code = '',
     required this.message,
     required this.rawBody,
   });
 
   @override
-  String toString() => 'BiometryAPIError: HTTP $statusCode: $message';
+  String toString() => code.isNotEmpty
+      ? 'BiometryAPIError: HTTP $statusCode [$code]: $message'
+      : 'BiometryAPIError: HTTP $statusCode: $message';
 }
 
 /// Parses an API error from an HTTP response status code and body.
 BiometryAPIError parseAPIError(int statusCode, List<int> body) {
+  var code = '';
   var message = '';
   try {
     final json = jsonDecode(utf8.decode(body)) as Map<String, dynamic>;
     final error = json['error'];
-    if (error is String) {
+    if (error is Map<String, dynamic>) {
+      // API v2 error envelope: { error: { code, message }, meta }.
+      code = (error['code'] as String?) ?? '';
+      final msg = error['message'];
+      if (msg is String) {
+        message = msg;
+      } else if (msg != null) {
+        message = jsonEncode(msg);
+      }
+    } else if (error is String) {
+      // Legacy shape: { error: "message" }.
       message = error;
-    } else {
+    }
+    if (message.isEmpty) {
       message = (json['message'] as String?) ?? '';
     }
   } catch (_) {
@@ -40,6 +59,7 @@ BiometryAPIError parseAPIError(int statusCode, List<int> body) {
   }
   return BiometryAPIError(
     statusCode: statusCode,
+    code: code,
     message: message,
     rawBody: body,
   );
