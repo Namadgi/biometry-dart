@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Dart](https://img.shields.io/badge/Dart-%3E%3D3.0-blue.svg)](https://dart.dev)
 
-Server-side Dart SDK for the [Biometry](https://biometrysolutions.com) identity verification platform.
+Server-side Dart SDK for the [Biometry](https://biometrysolutions.com) identity verification platform. It calls the Biometry API v2 (`/api-gateway/v2`).
 
 ## Installation
 
@@ -12,7 +12,7 @@ Add `biometry_api` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  biometry_api: ^0.1.0
+  biometry_api: ^0.2.0
 ```
 
 Then run:
@@ -28,112 +28,114 @@ import 'package:biometry_api/biometry_api.dart';
 
 final client = BiometryClient('your-api-key-jwt');
 
-// Start a biometric session
-final sessionId = await client.sessions.start(fullname: 'John Doe');
+final sessionId = await client.sessions.start();
 print('Session started: $sessionId');
 ```
 
+Every biometric call takes a `userId`: your own opaque, stable key for the end user (not their name or email).
+
 ## Full Verification Flow
 
-A typical identity verification flow: start a session, collect consent, authenticate a document, enroll the face from the document, process a biometric video, match the face against the session video, then end the session.
+Enroll the user's face, then verify them in a session: liveness on a video, face verification on the same video, and a face match against their document.
 
 ```dart
 import 'dart:io';
 import 'package:biometry_api/biometry_api.dart';
 
 Future<void> main() async {
-  final client = BiometryClient(
-    'your-api-key-jwt',
-    userFullname: 'John Doe',
-  );
+  final client = BiometryClient('your-api-key-jwt');
+  const userId = 'user-123';
+  const phrase = 'one two three four five six seven';
 
-  // 1. Start session
-  final sessionId = await client.sessions.start();
-  print('Session: $sessionId');
-
-  // 2. Approve consent
-  await client.consents.approve('consent-id', 'user-id', sessionId: sessionId);
-
-  // 3. Document authentication
-  final docImage = await File('passport.jpg').readAsBytes();
-  final docResult = await client.docAuth.check(
-    document: docImage,
-    fileName: 'passport.jpg',
-    sessionId: sessionId,
-    inhouseDocAuth: true,
-    mrzValidation: true,
-  );
-  final docInfo = docResult.decode(DocAuthInfo.fromJson);
-  print('Document: ${docInfo.firstName} ${docInfo.lastName}');
-
-  // 4. Enroll face from document
-  final faceImage = await File('face.jpg').readAsBytes();
+  // 1. Enroll the face. Enrollment needs the user's authorization and
+  //    storage consent (see Consent below).
+  final face = await File('face.jpg').readAsBytes();
   await client.enrollment.face(
-    EnrollFaceInput(face: faceImage, fileName: 'face.jpg', isDocument: true),
-    sessionId: sessionId,
+    EnrollFaceInput(userId: userId, face: face, fileName: 'face.jpg'),
   );
 
-  // 5. Process biometric video
-  final videoBytes = await File('video.mp4').readAsBytes();
-  final videoResult = await client.video.process(
-    ProcessVideoInput(
-      video: videoBytes,
-      videoName: 'video.mp4',
-      phrase: 'one two three four',
-    ),
-    sessionId: sessionId,
-  );
-  print('Video score: ${videoResult.score}');
+  // 2. Start a session
+  final sessionId = await client.sessions.start();
 
-  // 6. Face match with session video (reuses the video from step 5)
-  final matchResult = await client.faceMatch.matchWithSessionVideo(
-    image: faceImage,
-    imageName: 'face.jpg',
-    sessionId: sessionId,
+  // 3. Check the identity document
+  final passport = await File('passport.jpg').readAsBytes();
+  await client.docAuth.check(
+    DocAuthInput(document: passport, fileName: 'passport.jpg', sessionId: sessionId),
   );
-  print('Match score: ${matchResult.score}');
 
-  // 7. End session
+  // 4. Liveness on a video of the user reading the challenge phrase
+  final video = await File('selfie.mp4').readAsBytes();
+  await client.verification.liveness(LivenessInput(
+    userId: userId,
+    video: video,
+    fileName: 'selfie.mp4',
+    phrase: phrase,
+    sessionId: sessionId,
+  ));
+
+  // 5. Face verification on the same video
+  await client.verification.faceVerify(VerifyInput(
+    userId: userId,
+    phrase: phrase,
+    sessionId: sessionId,
+    useSessionVideo: true,
+  ));
+
+  // 6. Face match: document photo against the session video
+  final match = await client.faceMatch.match(FaceMatchInput(
+    userId: userId,
+    referenceImage: passport,
+    referenceName: 'passport.jpg',
+    sessionId: sessionId,
+    useSessionVideo: true,
+  ));
+  print('Face match decision: ${match.decision?.status}');
+
+  // 7. End the session
   await client.sessions.end(sessionId);
-  print('Session ended');
 }
 ```
 
+In a session, face verification and face match must use the liveness media: the same file, or `useSessionVideo`.
+
+## Consent
+
+Face and voice enrollment and `images.upload()` need the user's **authorization** and **storage** consent, recorded with `PUT /api-gateway/v2/users/{user_id}/consents`.
+
+`consents.approve()` and `consents.myApprovals()` manage your project's custom consent templates. They do **not** unlock enrollment.
+
 ## Services
 
-| Service | Accessor | Methods |
-|---------|----------|---------|
-| Sessions | `client.sessions` | `start()`, `end()` |
-| Video | `client.video` | `process()` |
-| Enrollment | `client.enrollment` | `face()`, `voice()` |
-| Face Match | `client.faceMatch` | `match()`, `matchWithSessionVideo()` |
-| Document Auth | `client.docAuth` | `check()` |
-| Consents | `client.consents` | `approve()`, `myApprovals()` |
-| Images | `client.images` | `upload()`, `get()` |
-| AVF | `client.avf` | `startInference()`, `checkStatus()` |
-| Transactions | `client.transactions` | `list()`, `count()`, `getBySession()`, `getSamples()`, `updateTags()`, `flag()` |
-| API Keys | `client.apiKeys` | `mint()`, `revoke()`, `info()` |
+| Service | Accessor | Methods | API v2 |
+|---------|----------|---------|--------|
+| Sessions | `client.sessions` | `start()`, `end()` | `/v2/sessions` |
+| Verification | `client.verification` | `liveness()`, `faceVerify()`, `voiceVerify()` | `/v2/liveness`, `/v2/face-verify`, `/v2/voice-verify` |
+| Enrollment | `client.enrollment` | `face()`, `voice()` | `/v2/enrollments/face`, `/v2/enrollments/voice` |
+| Face Match | `client.faceMatch` | `match()` | `/v2/face-match` |
+| Document Auth | `client.docAuth` | `check()` | `/v2/documents/check` |
+| Deepfake | `client.deepfake` | `submit()`, `status()` | `/v2/deepfake/checks` |
+| Images | `client.images` | `upload()`, `get()` | `/v2/users/{user_id}/reference-image` |
+| Consents | `client.consents` | `approve()`, `myApprovals()` | `/v2/consents` (custom templates) |
+| Transactions | `client.transactions` | `list()`, `count()`, `getBySession()`, `getSamples()`, `updateTags()`, `flag()` | `/api-transactions` (not part of v2) |
+| API Keys | `client.apiKeys` | `mint()`, `revoke()`, `info()` | `/api-projects` (not part of v2) |
+
+`LivenessInput.excludeServices` skips checks by name; use the `VerificationServices` constants (`faceLiveness`, `activeSpeaker`, `visualSpeech`, ...).
 
 ## Per-Request Options
 
-Every service method accepts optional named parameters that map to request headers:
+Every service method accepts optional named parameters that map to request metadata headers:
 
 | Parameter | Header | Description |
 |-----------|--------|-------------|
-| `sessionId` | `X-Session-ID` | Biometric session identifier |
-| `fullname` | `X-User-Fullname` | User's full name |
-| `deviceInfo` | `X-Device-Info` | Device information string |
+| `deviceInfo` | `X-Device-Info` | Device information |
 | `geoLocation` | `X-Geo-Location` | Geographic location |
 | `requestTags` | `X-Request-Tags` | Comma-separated tags |
 | `clientApp` | `X-Client-App` | Client application name |
 | `clientVersion` | `X-Client-Version` | Client application version |
-| `inhouseDocAuth` | `X-Inhouse-Docauth` | Use in-house document authentication |
-| `mrzValidation` | `X-Inhouse-MRZ` | Enable MRZ validation |
 
 ```dart
-final result = await client.video.process(
+final result = await client.verification.liveness(
   input,
-  sessionId: sessionId,
   deviceInfo: 'iPhone 15',
   geoLocation: '-33.8688,151.2093',
   requestTags: 'onboarding,mobile',
@@ -142,31 +144,33 @@ final result = await client.video.process(
 );
 ```
 
-## Response Headers
+User, session and trigger are fields on the input objects, not headers.
 
-The `BiometryResponse` object exposes useful response headers:
+## Responses
+
+Calls that return `BiometryResponse` carry the API v2 envelope `{ data, decision, meta }`:
 
 ```dart
-final resp = await client.video.process(input, sessionId: sessionId);
+final resp = await client.verification.liveness(input);
 
-resp.requestId;       // X-Request-Id  - unique request identifier
-resp.autoEnrolled;    // X-Auto-Enroll - whether auto-enrollment occurred
-resp.removedServices; // X-Removed-Services - whether services were removed
+resp.decision;   // Decision(status, score, reasons); null when no scoring system applies
+resp.data;       // endpoint-specific payload
+resp.requestId;  // request trace ID
 ```
 
 ## Error Handling
 
-All API errors are thrown as `BiometryAPIError` with the HTTP status code, message, and raw body:
+API errors are thrown as `BiometryAPIError`, with the HTTP status, the v2 error code, the message and the raw body:
 
 ```dart
 try {
-  await client.sessions.start();
+  await client.verification.liveness(input);
 } on BiometryAPIError catch (e) {
-  print('HTTP ${e.statusCode}: ${e.message}');
+  print('HTTP ${e.statusCode} ${e.code}: ${e.message}');
 }
 ```
 
-Convenience helpers for common status codes:
+Helpers for common status codes:
 
 ```dart
 try {
