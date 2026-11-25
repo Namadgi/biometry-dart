@@ -7,9 +7,9 @@ import '../v2.dart';
 
 /// Handles document authentication.
 class DocAuthService {
-  final BiometryTransport _transport;
-
   DocAuthService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Verifies the authenticity of a document image (jpg, jpeg, or png).
   Future<BiometryResponse> check(

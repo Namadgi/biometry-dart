@@ -5,9 +5,9 @@ import '../types.dart';
 
 /// Manages API keys via the public endpoints.
 class APIKeyService {
-  final BiometryTransport _transport;
-
   APIKeyService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Creates a new API key.
   Future<APIKeyInfo> mint({

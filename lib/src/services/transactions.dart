@@ -5,9 +5,9 @@ import '../types.dart';
 
 /// Handles transaction queries.
 class TransactionService {
-  final BiometryTransport _transport;
-
   TransactionService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Returns transactions matching the given filters.
   Future<List<Transaction>> list(

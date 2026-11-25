@@ -8,9 +8,9 @@ import '../v2.dart';
 /// Handles biometric verification. API v2 splits the v1 process-video call into
 /// three focused operations: [liveness], [faceVerify], and [voiceVerify].
 class VerificationService {
-  final BiometryTransport _transport;
-
   VerificationService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Runs the liveness pipeline (face liveness, active speaker, visual speech).
   Future<BiometryResponse> liveness(

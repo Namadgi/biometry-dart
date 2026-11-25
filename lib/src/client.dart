@@ -32,6 +32,35 @@ const pathProjects = '/api-projects';
 /// Biometric operations identify the end user with an opaque, customer-provided
 /// userId supplied on each call's input (not a header).
 class BiometryClient {
+  /// Creates a new Biometry SDK client.
+  ///
+  /// [apiKey] is the API key JWT for authentication.
+  /// [baseUrl] overrides the default API base URL.
+  /// [httpClient] sets a custom HTTP client.
+  /// [userAgent] overrides the default User-Agent header.
+  BiometryClient(
+    String apiKey, {
+    String baseUrl = defaultBaseUrl,
+    http.Client? httpClient,
+    String userAgent = 'biometry-dart/0.2.0',
+  }) : transport = BiometryTransport(
+          httpClient: httpClient ?? http.Client(),
+          baseUrl: baseUrl,
+          apiKey: apiKey,
+          userAgent: userAgent,
+        ) {
+    sessions = SessionService(transport);
+    verification = VerificationService(transport);
+    enrollment = EnrollmentService(transport);
+    faceMatch = FaceMatchService(transport);
+    docAuth = DocAuthService(transport);
+    consents = ConsentService(transport);
+    images = ImageService(transport);
+    deepfake = DeepfakeService(transport);
+    transactions = TransactionService(transport);
+    apiKeys = APIKeyService(transport);
+  }
+
   /// Session lifecycle operations.
   late final SessionService sessions;
 
@@ -64,33 +93,4 @@ class BiometryClient {
 
   /// The underlying HTTP transport.
   final BiometryTransport transport;
-
-  /// Creates a new Biometry SDK client.
-  ///
-  /// [apiKey] is the API key JWT for authentication.
-  /// [baseUrl] overrides the default API base URL.
-  /// [httpClient] sets a custom HTTP client.
-  /// [userAgent] overrides the default User-Agent header.
-  BiometryClient(
-    String apiKey, {
-    String baseUrl = defaultBaseUrl,
-    http.Client? httpClient,
-    String userAgent = 'biometry-dart/0.2.0',
-  }) : transport = BiometryTransport(
-          httpClient: httpClient ?? http.Client(),
-          baseUrl: baseUrl,
-          apiKey: apiKey,
-          userAgent: userAgent,
-        ) {
-    sessions = SessionService(transport);
-    verification = VerificationService(transport);
-    enrollment = EnrollmentService(transport);
-    faceMatch = FaceMatchService(transport);
-    docAuth = DocAuthService(transport);
-    consents = ConsentService(transport);
-    images = ImageService(transport);
-    deepfake = DeepfakeService(transport);
-    transactions = TransactionService(transport);
-    apiKeys = APIKeyService(transport);
-  }
 }

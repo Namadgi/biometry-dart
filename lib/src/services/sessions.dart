@@ -5,9 +5,9 @@ import '../types.dart';
 
 /// Handles biometric session lifecycle.
 class SessionService {
-  final BiometryTransport _transport;
-
   SessionService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Begins a new biometric session and returns the session ID.
   Future<String> start({

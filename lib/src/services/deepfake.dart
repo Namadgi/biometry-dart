@@ -6,9 +6,9 @@ import '../v2.dart';
 
 /// Handles asynchronous deepfake / anti-video-forgery checks.
 class DeepfakeService {
-  final BiometryTransport _transport;
-
   DeepfakeService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Sends a video for deepfake analysis and returns the created check.
   Future<DeepfakeCheck> submit(

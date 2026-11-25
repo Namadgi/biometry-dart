@@ -7,9 +7,9 @@ import '../v2.dart';
 
 /// Matches a live capture against a client-provided reference image.
 class FaceMatchService {
-  final BiometryTransport _transport;
-
   FaceMatchService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Compares the live capture against the reference image.
   Future<BiometryResponse> match(

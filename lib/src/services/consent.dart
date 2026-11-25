@@ -5,9 +5,9 @@ import '../types.dart';
 
 /// Handles consent approvals (API-key-authenticated only).
 class ConsentService {
-  final BiometryTransport _transport;
-
   ConsentService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Approves a consent for a user.
   Future<void> approve(

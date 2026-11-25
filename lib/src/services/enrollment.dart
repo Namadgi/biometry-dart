@@ -7,9 +7,9 @@ import '../v2.dart';
 
 /// Handles face and voice enrollment.
 class EnrollmentService {
-  final BiometryTransport _transport;
-
   EnrollmentService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Enrolls a face image for recognition.
   Future<BiometryResponse> face(

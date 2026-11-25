@@ -2,6 +2,13 @@ import 'dart:convert';
 
 /// Error returned for any HTTP 4xx/5xx response from the Biometry API.
 class BiometryAPIError implements Exception {
+  BiometryAPIError({
+    required this.statusCode,
+    this.code = '',
+    required this.message,
+    required this.rawBody,
+  });
+
   /// The HTTP status code.
   final int statusCode;
 
@@ -14,13 +21,6 @@ class BiometryAPIError implements Exception {
 
   /// The raw response body bytes.
   final List<int> rawBody;
-
-  BiometryAPIError({
-    required this.statusCode,
-    this.code = '',
-    required this.message,
-    required this.rawBody,
-  });
 
   @override
   String toString() => code.isNotEmpty

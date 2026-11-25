@@ -7,15 +7,15 @@ import 'response.dart';
 
 /// Represents a file to be uploaded via multipart.
 class FileUpload {
-  final String fieldName;
-  final String fileName;
-  final List<int> content;
-
   FileUpload({
     required this.fieldName,
     required this.fileName,
     required this.content,
   });
+
+  final String fieldName;
+  final String fileName;
+  final List<int> content;
 }
 
 /// Low-level HTTP transport for the Biometry API.
@@ -23,17 +23,17 @@ class FileUpload {
 /// Handles authentication, header injection, JSON/multipart encoding,
 /// response envelope unwrapping, and error parsing.
 class BiometryTransport {
-  final http.Client httpClient;
-  final String baseUrl;
-  final String apiKey;
-  final String userAgent;
-
   BiometryTransport({
     required this.httpClient,
     required this.baseUrl,
     required this.apiKey,
     this.userAgent = 'biometry-dart/0.2.0',
   });
+
+  final http.Client httpClient;
+  final String baseUrl;
+  final String apiKey;
+  final String userAgent;
 
   /// Builds standard headers for every request.
   Map<String, String> _baseHeaders() {

@@ -1,8 +1,8 @@
 /// Request body for ending a session.
 class EndSessionRequest {
-  final String? phoneNumber;
-
   EndSessionRequest({this.phoneNumber});
+
+  final String? phoneNumber;
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -14,6 +14,17 @@ class EndSessionRequest {
 /// Input for a liveness check (face liveness, active speaker detection, visual
 /// speech recognition).
 class LivenessInput {
+  LivenessInput({
+    required this.userId,
+    required this.video,
+    required this.fileName,
+    required this.phrase,
+    this.vocabulary,
+    this.trigger,
+    this.sessionId,
+    this.excludeServices,
+  });
+
   /// Opaque, customer-provided identity key.
   final String userId;
 
@@ -37,21 +48,20 @@ class LivenessInput {
 
   /// Services to skip from the pipeline (see [VerificationServices]).
   final List<String>? excludeServices;
-
-  LivenessInput({
-    required this.userId,
-    required this.video,
-    required this.fileName,
-    required this.phrase,
-    this.vocabulary,
-    this.trigger,
-    this.sessionId,
-    this.excludeServices,
-  });
 }
 
 /// Input for face or voice verification against the user's enrolled template.
 class VerifyInput {
+  VerifyInput({
+    required this.userId,
+    this.media,
+    this.fileName,
+    required this.phrase,
+    this.vocabulary,
+    this.sessionId,
+    this.useSessionVideo = false,
+  });
+
   /// Opaque, customer-provided identity key.
   final String userId;
 
@@ -72,20 +82,20 @@ class VerifyInput {
 
   /// Reuse the video captured earlier in the session. Requires [sessionId].
   final bool useSessionVideo;
-
-  VerifyInput({
-    required this.userId,
-    this.media,
-    this.fileName,
-    required this.phrase,
-    this.vocabulary,
-    this.sessionId,
-    this.useSessionVideo = false,
-  });
 }
 
 /// Input for a face-match request.
 class FaceMatchInput {
+  FaceMatchInput({
+    required this.userId,
+    required this.referenceImage,
+    required this.referenceName,
+    this.video,
+    this.videoName,
+    this.sessionId,
+    this.useSessionVideo = false,
+  });
+
   /// Opaque, customer-provided identity key.
   final String userId;
 
@@ -106,20 +116,18 @@ class FaceMatchInput {
 
   /// Reuse the video captured earlier in the session. Requires [sessionId].
   final bool useSessionVideo;
-
-  FaceMatchInput({
-    required this.userId,
-    required this.referenceImage,
-    required this.referenceName,
-    this.video,
-    this.videoName,
-    this.sessionId,
-    this.useSessionVideo = false,
-  });
 }
 
 /// Input for a document authenticity check.
 class DocAuthInput {
+  DocAuthInput({
+    required this.document,
+    required this.fileName,
+    this.sessionId,
+    this.provider,
+    this.mrzProvider,
+  });
+
   /// Document image bytes.
   final List<int> document;
 
@@ -134,18 +142,17 @@ class DocAuthInput {
 
   /// MRZ extraction provider: "inhouse" or "idscan".
   final String? mrzProvider;
-
-  DocAuthInput({
-    required this.document,
-    required this.fileName,
-    this.sessionId,
-    this.provider,
-    this.mrzProvider,
-  });
 }
 
 /// Input for face enrollment.
 class EnrollFaceInput {
+  EnrollFaceInput({
+    required this.userId,
+    required this.face,
+    required this.fileName,
+    this.isDocument = false,
+  });
+
   /// Opaque, customer-provided identity key.
   final String userId;
 
@@ -157,17 +164,18 @@ class EnrollFaceInput {
 
   /// Set true if the face image is from a document.
   final bool isDocument;
-
-  EnrollFaceInput({
-    required this.userId,
-    required this.face,
-    required this.fileName,
-    this.isDocument = false,
-  });
 }
 
 /// Input for voice enrollment.
 class EnrollVoiceInput {
+  EnrollVoiceInput({
+    required this.userId,
+    required this.voice,
+    required this.fileName,
+    required this.phrase,
+    this.vocabulary,
+  });
+
   /// Opaque, customer-provided identity key.
   final String userId;
 
@@ -182,18 +190,17 @@ class EnrollVoiceInput {
 
   /// Optional vocabulary identifier.
   final String? vocabulary;
-
-  EnrollVoiceInput({
-    required this.userId,
-    required this.voice,
-    required this.fileName,
-    required this.phrase,
-    this.vocabulary,
-  });
 }
 
 /// Input for submitting a deepfake check.
 class DeepfakeInput {
+  DeepfakeInput({
+    required this.userId,
+    required this.video,
+    required this.fileName,
+    this.sessionId,
+  });
+
   /// Opaque, customer-provided identity key.
   final String userId;
 
@@ -205,38 +212,10 @@ class DeepfakeInput {
 
   /// Optional session ID.
   final String? sessionId;
-
-  DeepfakeInput({
-    required this.userId,
-    required this.video,
-    required this.fileName,
-    this.sessionId,
-  });
 }
 
 /// Document authentication info extracted from a document.
 class DocAuthInfo {
-  final String documentType;
-  final String countryCode;
-  final String nationalityCode;
-  final String nationalityName;
-  final String sex;
-  final String firstName;
-  final String fatherName;
-  final String lastName;
-  final String expiryDate;
-  final String documentNumber;
-  final String birthDate;
-  final String portraitPhoto;
-  final String signature;
-  final String documentCategory;
-  final String issuingState;
-  final String frontDocumentTypeId;
-  final bool containsRfid;
-  final String? faceImageBase64;
-  final String? currentResult;
-  final MRZValidation? mrzValidation;
-
   DocAuthInfo({
     this.documentType = '',
     this.countryCode = '',
@@ -288,6 +267,27 @@ class DocAuthInfo {
     );
   }
 
+  final String documentType;
+  final String countryCode;
+  final String nationalityCode;
+  final String nationalityName;
+  final String sex;
+  final String firstName;
+  final String fatherName;
+  final String lastName;
+  final String expiryDate;
+  final String documentNumber;
+  final String birthDate;
+  final String portraitPhoto;
+  final String signature;
+  final String documentCategory;
+  final String issuingState;
+  final String frontDocumentTypeId;
+  final bool containsRfid;
+  final String? faceImageBase64;
+  final String? currentResult;
+  final MRZValidation? mrzValidation;
+
   Map<String, dynamic> toJson() {
     final result = <String, dynamic>{
       'document_type': documentType,
@@ -321,13 +321,6 @@ class DocAuthInfo {
 
 /// MRZ (Machine Readable Zone) validation results.
 class MRZValidation {
-  final bool hasMrz;
-  final String? rawMrz;
-  final bool checkDigitsValid;
-  final bool fieldsMatch;
-  final List<String> discrepancies;
-  final bool validationPerformed;
-
   MRZValidation({
     this.hasMrz = false,
     this.rawMrz,
@@ -351,6 +344,13 @@ class MRZValidation {
     );
   }
 
+  final bool hasMrz;
+  final String? rawMrz;
+  final bool checkDigitsValid;
+  final bool fieldsMatch;
+  final List<String> discrepancies;
+  final bool validationPerformed;
+
   Map<String, dynamic> toJson() {
     final result = <String, dynamic>{
       'has_mrz': hasMrz,
@@ -366,12 +366,6 @@ class MRZValidation {
 
 /// Consent approval record.
 class ConsentApproval {
-  final String id;
-  final String consentVersionId;
-  final String userId;
-  final bool isApproved;
-  final DateTime createdAt;
-
   ConsentApproval({
     required this.id,
     required this.consentVersionId,
@@ -392,6 +386,12 @@ class ConsentApproval {
     );
   }
 
+  final String id;
+  final String consentVersionId;
+  final String userId;
+  final bool isApproved;
+  final DateTime createdAt;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'consent_version_id': consentVersionId,
@@ -403,22 +403,6 @@ class ConsentApproval {
 
 /// State of an asynchronous deepfake check.
 class DeepfakeCheck {
-  final String id;
-
-  /// pending | processing | completed | failed
-  final String status;
-
-  /// Deepfake probability (0.0–1.0), null until completed.
-  final double? score;
-  final String? prediction;
-  final String? message;
-
-  /// Unix timestamp (seconds).
-  final int? createdAt;
-
-  /// Unix timestamp (seconds).
-  final int? completedAt;
-
   DeepfakeCheck({
     required this.id,
     required this.status,
@@ -440,24 +424,26 @@ class DeepfakeCheck {
       completedAt: (json['completed_at'] as num?)?.toInt(),
     );
   }
+
+  final String id;
+
+  /// pending | processing | completed | failed
+  final String status;
+
+  /// Deepfake probability (0.0–1.0), null until completed.
+  final double? score;
+  final String? prediction;
+  final String? message;
+
+  /// Unix timestamp (seconds).
+  final int? createdAt;
+
+  /// Unix timestamp (seconds).
+  final int? completedAt;
 }
 
 /// Request filters for listing transactions.
 class TransactionListRequest {
-  final String? projectId;
-  final String? sessionId;
-  final String? userFullname;
-  final String? fromDate;
-  final String? toDate;
-  final int? statusCode;
-  final String? decision;
-  final String? action;
-  final String? flag;
-  final int? page;
-  final int? pageSize;
-  final String? sortBy;
-  final String? sortOrder;
-
   TransactionListRequest({
     this.projectId,
     this.sessionId,
@@ -473,6 +459,20 @@ class TransactionListRequest {
     this.sortBy,
     this.sortOrder,
   });
+
+  final String? projectId;
+  final String? sessionId;
+  final String? userFullname;
+  final String? fromDate;
+  final String? toDate;
+  final int? statusCode;
+  final String? decision;
+  final String? action;
+  final String? flag;
+  final int? page;
+  final int? pageSize;
+  final String? sortBy;
+  final String? sortOrder;
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -495,29 +495,6 @@ class TransactionListRequest {
 
 /// Biometric transaction record.
 class Transaction {
-  final String id;
-  final String sessionId;
-  final String flag;
-  final TransactionDevice device;
-  final String projectId;
-  final String apiKeyId;
-  final int statusCode;
-  final bool isSuccess;
-  final int bodyByteSize;
-  final List<String> usedServices;
-  final DateTime receivedAt;
-  final DateTime answeredAt;
-  final String action;
-  final String appVersion;
-  final int duration;
-  final String decision;
-  final List<DecisionChange> decisionHistory;
-  final Geo? geo;
-  final List<String> tags;
-  final dynamic inputMetadata;
-  final dynamic outputMetadata;
-  final int rulesVersion;
-
   Transaction({
     required this.id,
     required this.sessionId,
@@ -592,6 +569,29 @@ class Transaction {
     );
   }
 
+  final String id;
+  final String sessionId;
+  final String flag;
+  final TransactionDevice device;
+  final String projectId;
+  final String apiKeyId;
+  final int statusCode;
+  final bool isSuccess;
+  final int bodyByteSize;
+  final List<String> usedServices;
+  final DateTime receivedAt;
+  final DateTime answeredAt;
+  final String action;
+  final String appVersion;
+  final int duration;
+  final String decision;
+  final List<DecisionChange> decisionHistory;
+  final Geo? geo;
+  final List<String> tags;
+  final dynamic inputMetadata;
+  final dynamic outputMetadata;
+  final int rulesVersion;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'session_id': sessionId,
@@ -620,9 +620,6 @@ class Transaction {
 
 /// Device information from a transaction.
 class TransactionDevice {
-  final String deviceType;
-  final String deviceOs;
-
   TransactionDevice({this.deviceType = '', this.deviceOs = ''});
 
   factory TransactionDevice.fromJson(Map<String, dynamic> json) {
@@ -632,6 +629,9 @@ class TransactionDevice {
     );
   }
 
+  final String deviceType;
+  final String deviceOs;
+
   Map<String, dynamic> toJson() => {
         'device_type': deviceType,
         'device_os': deviceOs,
@@ -640,12 +640,6 @@ class TransactionDevice {
 
 /// Records a change in transaction decision.
 class DecisionChange {
-  final String from;
-  final String to;
-  final String reason;
-  final String changedBy;
-  final DateTime changedAt;
-
   DecisionChange({
     required this.from,
     required this.to,
@@ -666,6 +660,12 @@ class DecisionChange {
     );
   }
 
+  final String from;
+  final String to;
+  final String reason;
+  final String changedBy;
+  final DateTime changedAt;
+
   Map<String, dynamic> toJson() => {
         'from': from,
         'to': to,
@@ -677,12 +677,6 @@ class DecisionChange {
 
 /// Geographic location data.
 class Geo {
-  final String ip;
-  final double lat;
-  final double lng;
-  final String country;
-  final String city;
-
   Geo({
     this.ip = '',
     this.lat = 0,
@@ -701,6 +695,12 @@ class Geo {
     );
   }
 
+  final String ip;
+  final double lat;
+  final double lng;
+  final String country;
+  final String city;
+
   Map<String, dynamic> toJson() => {
         'ip': ip,
         'lat': lat,
@@ -712,14 +712,6 @@ class Geo {
 
 /// API key information.
 class APIKeyInfo {
-  final String id;
-  final String projectId;
-  final String name;
-  final String state;
-  final List<String> services;
-  final DateTime createdAt;
-  final DateTime? expiresAt;
-
   APIKeyInfo({
     required this.id,
     required this.projectId,
@@ -747,6 +739,14 @@ class APIKeyInfo {
           : null,
     );
   }
+
+  final String id;
+  final String projectId;
+  final String name;
+  final String state;
+  final List<String> services;
+  final DateTime createdAt;
+  final DateTime? expiresAt;
 
   Map<String, dynamic> toJson() {
     final result = <String, dynamic>{

@@ -4,9 +4,9 @@ import '../transport.dart';
 
 /// Manages a user's reference image (used by face-match).
 class ImageService {
-  final BiometryTransport _transport;
-
   ImageService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Stores the reference image for the given user. Requires an approved
   /// consent for the user.
