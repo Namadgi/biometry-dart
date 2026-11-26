@@ -21,7 +21,7 @@ class ConsentService {
   }) {
     return _transport.doJson<void>(
       'POST',
-      '$pathGatewayV2/consents/$consentId/approve/$userId',
+      '$pathGatewayV2/consents/${Uri.encodeComponent(consentId)}/approve/${Uri.encodeComponent(userId)}',
       extraHeaders: buildCallHeaders(
         deviceInfo: deviceInfo,
         geoLocation: geoLocation,
@@ -43,7 +43,7 @@ class ConsentService {
   }) {
     return _transport.doJson<List<ConsentApproval>>(
       'GET',
-      '$pathGatewayV2/consents/my-approvals/$userId',
+      '$pathGatewayV2/consents/my-approvals/${Uri.encodeComponent(userId)}',
       fromJson: (data) {
         if (data is List) {
           return data

@@ -21,7 +21,7 @@ class ImageService {
     String? clientVersion,
   }) {
     return _transport.doMultipart<void>(
-      '$pathGatewayV2/users/$userId/reference-image',
+      '$pathGatewayV2/users/${Uri.encodeComponent(userId)}/reference-image',
       method: 'PUT',
       files: [
         FileUpload(
@@ -51,7 +51,7 @@ class ImageService {
   }) {
     return _transport.doBytes(
       'GET',
-      '$pathGatewayV2/users/$userId/reference-image',
+      '$pathGatewayV2/users/${Uri.encodeComponent(userId)}/reference-image',
       extraHeaders: buildCallHeaders(
         deviceInfo: deviceInfo,
         geoLocation: geoLocation,

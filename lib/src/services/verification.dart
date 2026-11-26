@@ -101,7 +101,9 @@ class VerificationService {
         sessionId: input.sessionId,
         useSessionVideo: input.useSessionVideo,
       ),
-      files: input.media != null
+      // With useSessionVideo the gateway reuses the session's liveness video
+      // and ignores an uploaded one, so don't upload it.
+      files: input.media != null && !input.useSessionVideo
           ? [
               FileUpload(
                 fieldName: fileField,

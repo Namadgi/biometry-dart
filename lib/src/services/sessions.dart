@@ -44,7 +44,7 @@ class SessionService {
   }) {
     return _transport.doJson<void>(
       'POST',
-      '$pathGatewayV2/sessions/$id/end',
+      '$pathGatewayV2/sessions/${Uri.encodeComponent(id)}/end',
       payload: request?.toJson(),
       extraHeaders: buildCallHeaders(
         deviceInfo: deviceInfo,

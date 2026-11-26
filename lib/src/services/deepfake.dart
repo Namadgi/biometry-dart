@@ -51,7 +51,7 @@ class DeepfakeService {
   }) {
     return _transport.doJson<DeepfakeCheck>(
       'GET',
-      '$pathGatewayV2/deepfake/checks/$requestId',
+      '$pathGatewayV2/deepfake/checks/${Uri.encodeComponent(requestId)}',
       fromJson: (data) => DeepfakeCheck.fromJson(data as Map<String, dynamic>),
       extraHeaders: buildCallHeaders(
         deviceInfo: deviceInfo,

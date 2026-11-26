@@ -2,7 +2,7 @@
 
 ## 0.2.0 (BM-338)
 
-Migrated the SDK to the **Biometry API v2** gateway (`/api-gateway/v2`). This is a breaking release.
+Migrated the SDK to the **Biometry API v2** gateway (`/api-gateway/v2`). This is a breaking release. Endpoint paths below are shortened: `/v2/...` means `/api-gateway/v2/...`.
 
 ### Breaking changes
 
