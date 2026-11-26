@@ -365,6 +365,40 @@ class MRZValidation {
 }
 
 /// Consent approval record.
+/// The user's authorization and storage consent, as returned by
+/// `consents.give()`, `consents.revoke()` and `consents.status()`.
+/// Enrollment requires both.
+class UserConsents {
+  UserConsents({
+    required this.userId,
+    required this.authorization,
+    required this.storage,
+  });
+
+  factory UserConsents.fromJson(Map<String, dynamic> json) {
+    return UserConsents(
+      userId: (json['user_id'] as String?) ?? '',
+      authorization: (json['authorization'] as bool?) ?? false,
+      storage: (json['storage'] as bool?) ?? false,
+    );
+  }
+
+  /// The user's ID.
+  final String userId;
+
+  /// Consent to process the user's biometric data.
+  final bool authorization;
+
+  /// Consent to store the user's biometric data.
+  final bool storage;
+
+  Map<String, dynamic> toJson() => {
+        'user_id': userId,
+        'authorization': authorization,
+        'storage': storage,
+      };
+}
+
 class ConsentApproval {
   ConsentApproval({
     required this.id,

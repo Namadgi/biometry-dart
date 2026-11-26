@@ -47,23 +47,26 @@ Future<void> main() async {
   const userId = 'user-123';
   const phrase = 'one two three four five six seven';
 
-  // 1. Enroll the face. Enrollment needs the user's authorization and
-  //    storage consent (see Consent below).
+  // 1. Record the user's consent (collected in your app). Enrollment needs
+  //    both authorization and storage consent; give() records both by default.
+  await client.consents.give(userId);
+
+  // 2. Enroll the face
   final face = await File('face.jpg').readAsBytes();
   await client.enrollment.face(
     EnrollFaceInput(userId: userId, face: face, fileName: 'face.jpg'),
   );
 
-  // 2. Start a session
+  // 3. Start a session
   final sessionId = await client.sessions.start();
 
-  // 3. Check the identity document
+  // 4. Check the identity document
   final passport = await File('passport.jpg').readAsBytes();
   await client.docAuth.check(
     DocAuthInput(document: passport, fileName: 'passport.jpg', sessionId: sessionId),
   );
 
-  // 4. Liveness on a video of the user reading the challenge phrase
+  // 5. Liveness on a video of the user reading the challenge phrase
   final video = await File('selfie.mp4').readAsBytes();
   await client.verification.liveness(LivenessInput(
     userId: userId,
@@ -73,7 +76,7 @@ Future<void> main() async {
     sessionId: sessionId,
   ));
 
-  // 5. Face verification on the same video
+  // 6. Face verification on the same video
   await client.verification.faceVerify(VerifyInput(
     userId: userId,
     phrase: phrase,
@@ -81,7 +84,7 @@ Future<void> main() async {
     useSessionVideo: true,
   ));
 
-  // 6. Face match: document photo against the session video
+  // 7. Face match: document photo against the session video
   final match = await client.faceMatch.match(FaceMatchInput(
     userId: userId,
     referenceImage: passport,
@@ -91,7 +94,7 @@ Future<void> main() async {
   ));
   print('Face match decision: ${match.decision?.status}');
 
-  // 7. End the session
+  // 8. End the session
   await client.sessions.end(sessionId);
 }
 ```
@@ -100,7 +103,22 @@ In a session, face verification and face match must use the liveness media: the 
 
 ## Consent
 
-Face and voice enrollment and `images.upload()` need the user's **authorization** and **storage** consent, recorded with `PUT /api-gateway/v2/users/{user_id}/consents`.
+Face and voice enrollment need the user's **authorization** and **storage** consent; `images.upload()` needs authorization consent. Collect the user's agreement in your app, then record it:
+
+```dart
+// Give both (the default; enrollment needs both). sessionId is optional:
+// it shows the consent with that session in the Console.
+var state = await client.consents.give(userId, sessionId: sessionId);
+
+// Withdraw storage consent only; authorization is left unchanged
+state = await client.consents.revoke(userId, authorization: false);
+
+// Read the current state (both false if the user never gave consent)
+state = await client.consents.status(userId);
+print('${state.authorization} ${state.storage}');
+```
+
+`give()` and `revoke()` return a `UserConsents` with the state after the change, are safe to repeat, and throw an `ArgumentError` before sending a request if both `authorization` and `storage` are `false`.
 
 `consents.approve()` and `consents.myApprovals()` manage your project's custom consent templates. They do **not** unlock enrollment.
 
@@ -115,6 +133,7 @@ Face and voice enrollment and `images.upload()` need the user's **authorization*
 | Document Auth | `client.docAuth` | `check()` | `/v2/documents/check` |
 | Deepfake | `client.deepfake` | `submit()`, `status()` | `/v2/deepfake/checks` |
 | Images | `client.images` | `upload()`, `get()` | `/v2/users/{user_id}/reference-image` |
+| Consents | `client.consents` | `give()`, `revoke()`, `status()` | `/v2/users/{user_id}/consents` |
 | Consents | `client.consents` | `approve()`, `myApprovals()` | `/v2/consents` (custom templates) |
 | Transactions | `client.transactions` | `list()`, `count()`, `getBySession()`, `getSamples()`, `updateTags()`, `flag()` | `/api-transactions` (not part of v2) |
 | API Keys | `client.apiKeys` | `mint()`, `revoke()`, `info()` | `/api-projects` (not part of v2) |
