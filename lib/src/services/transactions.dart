@@ -5,9 +5,9 @@ import '../types.dart';
 
 /// Handles transaction queries.
 class TransactionService {
-  final BiometryTransport _transport;
-
   TransactionService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Returns transactions matching the given filters.
   Future<List<Transaction>> list(
@@ -94,7 +94,7 @@ class TransactionService {
   }) {
     return _transport.doJson<List<Transaction>>(
       'GET',
-      '$pathTransactions/transactions/sessions/$sessionId',
+      '$pathTransactions/transactions/sessions/${Uri.encodeComponent(sessionId)}',
       fromJson: (data) {
         if (data is List) {
           return data
@@ -129,7 +129,7 @@ class TransactionService {
   }) {
     return _transport.doJson<dynamic>(
       'GET',
-      '$pathTransactions/transactions/$id/samples',
+      '$pathTransactions/transactions/${Uri.encodeComponent(id)}/samples',
       fromJson: (data) => data,
       extraHeaders: buildCallHeaders(
         fullname: fullname,
@@ -159,7 +159,7 @@ class TransactionService {
   }) {
     return _transport.doJson<void>(
       'PUT',
-      '$pathTransactions/transactions/$id/tags',
+      '$pathTransactions/transactions/${Uri.encodeComponent(id)}/tags',
       payload: {'tags': tags},
       extraHeaders: buildCallHeaders(
         fullname: fullname,
@@ -189,7 +189,7 @@ class TransactionService {
   }) {
     return _transport.doJson<void>(
       'PUT',
-      '$pathTransactions/transactions/$id/flag',
+      '$pathTransactions/transactions/${Uri.encodeComponent(id)}/flag',
       payload: {'flag': flag},
       extraHeaders: buildCallHeaders(
         fullname: fullname,

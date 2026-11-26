@@ -3,31 +3,26 @@ import '../client.dart';
 import '../response.dart';
 import '../transport.dart';
 import '../types.dart';
+import '../v2.dart';
 
 /// Handles face and voice enrollment.
 class EnrollmentService {
-  final BiometryTransport _transport;
-
   EnrollmentService(this._transport);
+
+  final BiometryTransport _transport;
 
   /// Enrolls a face image for recognition.
   Future<BiometryResponse> face(
     EnrollFaceInput input, {
-    String? fullname,
-    String? sessionId,
-    String? actionTrigger,
     String? deviceInfo,
     String? geoLocation,
     String? requestTags,
     String? clientApp,
     String? clientVersion,
   }) {
-    final fields = <String, String>{};
-    if (input.isDocument) fields['is_document'] = 'true';
-
     return _transport.doMultipartRaw(
-      '$pathGateway/enroll/face',
-      fields: fields,
+      '$pathGatewayV2/enrollments/face',
+      fields: requestField(userId: input.userId, isDocument: input.isDocument),
       files: [
         FileUpload(
           fieldName: 'face',
@@ -36,9 +31,6 @@ class EnrollmentService {
         ),
       ],
       extraHeaders: buildCallHeaders(
-        fullname: fullname,
-        sessionId: sessionId,
-        actionTrigger: actionTrigger,
         deviceInfo: deviceInfo,
         geoLocation: geoLocation,
         requestTags: requestTags,
@@ -48,37 +40,30 @@ class EnrollmentService {
     );
   }
 
-  /// Enrolls voice recordings for recognition.
+  /// Enrolls a voice recording for recognition.
   Future<BiometryResponse> voice(
     EnrollVoiceInput input, {
-    String? fullname,
-    String? sessionId,
-    String? actionTrigger,
     String? deviceInfo,
     String? geoLocation,
     String? requestTags,
     String? clientApp,
     String? clientVersion,
   }) {
-    final fields = <String, String>{
-      'phrase': input.phrases.join(','),
-    };
-    if (input.vocabulary != null) fields['vocabulary'] = input.vocabulary!;
-
     return _transport.doMultipartRaw(
-      '$pathGateway/enroll/voice',
-      fields: fields,
-      files: input.files
-          .map((f) => FileUpload(
-                fieldName: 'voice',
-                fileName: f.fileName,
-                content: f.content,
-              ))
-          .toList(),
+      '$pathGatewayV2/enrollments/voice',
+      fields: requestField(
+        userId: input.userId,
+        phrase: input.phrase,
+        vocabulary: input.vocabulary,
+      ),
+      files: [
+        FileUpload(
+          fieldName: 'voice',
+          fileName: input.fileName,
+          content: input.voice,
+        ),
+      ],
       extraHeaders: buildCallHeaders(
-        fullname: fullname,
-        sessionId: sessionId,
-        actionTrigger: actionTrigger,
         deviceInfo: deviceInfo,
         geoLocation: geoLocation,
         requestTags: requestTags,

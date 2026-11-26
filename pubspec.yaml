@@ -1,6 +1,6 @@
 name: biometry_api
 description: Dart SDK for the Biometry platform APIs (server-side).
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/Namadgi/biometry-dart
 
 environment:
