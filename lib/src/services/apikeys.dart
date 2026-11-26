@@ -51,7 +51,7 @@ class APIKeyService {
   }) {
     return _transport.doJson<void>(
       'DELETE',
-      '$pathProjects/public/apikeys/$keyId',
+      '$pathProjects/public/apikeys/${Uri.encodeComponent(keyId)}',
       extraHeaders: buildCallHeaders(
         fullname: fullname,
         sessionId: sessionId,

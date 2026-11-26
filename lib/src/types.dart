@@ -449,8 +449,8 @@ class DeepfakeCheck {
 
   factory DeepfakeCheck.fromJson(Map<String, dynamic> json) {
     return DeepfakeCheck(
-      id: (json['id'] as String?) ?? '',
-      status: (json['status'] as String?) ?? '',
+      id: _requireString(json, 'id'),
+      status: _requireString(json, 'status'),
       score: (json['score'] as num?)?.toDouble(),
       prediction: json['prediction'] as String?,
       message: json['message'] as String?,
@@ -796,4 +796,13 @@ class APIKeyInfo {
     }
     return result;
   }
+}
+
+/// Reads a required string field, or throws a [FormatException] instead of
+/// silently using `''` (an empty deepfake check `status` would make a caller
+/// that polls for `completed`/`failed` loop forever).
+String _requireString(Map<String, dynamic> json, String key) {
+  final value = json[key];
+  if (value is String && value.isNotEmpty) return value;
+  throw FormatException('Unexpected response: missing or invalid "$key"', json);
 }

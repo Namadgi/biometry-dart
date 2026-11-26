@@ -27,7 +27,9 @@ class FaceMatchService {
         content: input.referenceImage,
       ),
     ];
-    if (input.video != null) {
+    // With useSessionVideo the gateway reuses the session's liveness video
+    // and ignores an uploaded one, so don't upload it.
+    if (input.video != null && !input.useSessionVideo) {
       files.add(FileUpload(
         fieldName: 'video',
         fileName: input.videoName ?? 'capture',
